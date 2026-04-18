@@ -4,6 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages 通常部署在 /<repo>/ 子路径下，使用相对 base 可避免资源 404
+  base: './',
   plugins: [
     react(),
     VitePWA({
@@ -16,6 +18,8 @@ export default defineConfig({
         theme_color: '#f6f7fb',
         background_color: '#f6f7fb',
         display: 'standalone',
+        start_url: './',
+        scope: './',
         icons: [
           {
             src: 'pwa-192.png',
@@ -30,7 +34,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: '/index.html',
+        navigateFallback: 'index.html',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       },
     }),
