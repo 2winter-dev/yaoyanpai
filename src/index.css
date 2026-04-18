@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --app-bg: #ffffff;
+    --app-card: rgba(255, 255, 255, 0.72);
+    --app-text: #12121a;
+    --app-subtext: rgba(18, 18, 26, 0.55);
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      'Noto Sans',
+      'Apple Color Emoji',
+      'Segoe UI Emoji',
+      'Segoe UI Symbol';
+    background: var(--app-bg);
+    color: var(--app-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-[28px] border border-black/5 bg-white/95 shadow-[0_22px_55px_-38px_rgba(0,0,0,0.42)] backdrop-blur-xl;
+  }
+
+  .icon-btn {
+    @apply grid h-10 w-10 place-items-center rounded-full bg-white shadow-[0_14px_30px_-22px_rgba(0,0,0,0.45)] backdrop-blur-xl;
+  }
+
+  /* 车牌孔位（预留孔） */
+  .plate-hole {
+    width: 16px;
+    height: 7px;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow:
+      inset 0 2px 3px rgba(0, 0, 0, 0.55),
+      inset 0 -1px 2px rgba(255, 255, 255, 0.25);
+    position: relative;
+  }
+  .plate-hole::after {
+    content: '';
+    position: absolute;
+    inset: 1.5px;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.38);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  /* 车牌银色帽（带文字 + bolt） */
+  .plate-cap {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 15px;
+    height: 15px;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    background:
+      radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 35%, rgba(20, 20, 24, 0.15) 70%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(170, 170, 175, 0.45));
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.22),
+      inset 0 1px 1px rgba(255, 255, 255, 0.75),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .plate-cap__bolt {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 5.5px;
+    height: 5.5px;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    background: radial-gradient(circle at 30% 25%, #ffffff, #c8c8cf 60%, #8b8b93);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+  }
+
+  .plate-cap__text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 5px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: 0.1px;
+    color: rgba(25, 25, 30, 0.75);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    user-select: none;
+    pointer-events: none;
+  }
+
+
+  /* 轻微动态主题渐变背景（蓝/绿） */
+  .theme-bg {
+    position: relative;
+    isolation: isolate;
+  }
+  .theme-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-size: 240% 240%;
+    animation: bg-shift 10s ease-in-out infinite;
+    opacity: 0.65;
+    transition: background 500ms ease;
+  }
+  .theme-blue::before {
+    background-image:
+      radial-gradient(600px 280px at 20% 10%, rgba(43, 108, 255, 0.22), transparent 60%),
+      radial-gradient(520px 260px at 85% 25%, rgba(126, 165, 255, 0.16), transparent 60%),
+      radial-gradient(520px 340px at 40% 90%, rgba(31, 80, 216, 0.14), transparent 60%),
+      linear-gradient(180deg, #f6f7fb, #f6f7fb);
+  }
+  .theme-green::before {
+    background-image:
+      radial-gradient(620px 300px at 18% 12%, rgba(32, 214, 111, 0.18), transparent 62%),
+      radial-gradient(520px 260px at 88% 20%, rgba(242, 217, 76, 0.14), transparent 60%),
+      radial-gradient(520px 340px at 40% 92%, rgba(15, 174, 85, 0.12), transparent 60%),
+      linear-gradient(180deg, #f6f7fb, #f6f7fb);
+  }
+}
+
+@keyframes bg-shift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 60%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes plate-pop {
+  0% {
+    transform: translateY(10px) scale(0.98);
+    filter: saturate(0.95);
+  }
+  55% {
+    transform: translateY(0) scale(1.03);
+    filter: saturate(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: saturate(1);
+  }
+}
+
+@keyframes plate-shine {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.45;
+  }
+  80% {
+    opacity: 0.22;
+  }
+  100% {
+    transform: translateX(140%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+.plate-anim {
+  animation: plate-pop 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.plate-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.plate-shine::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: 0;
+  width: 60%;
+  height: 160%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+  filter: blur(1px);
+  animation: plate-shine 720ms ease-out both;
+}
