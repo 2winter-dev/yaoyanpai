@@ -31,9 +31,7 @@
 
 ![预览](./preview/y4.png)
 
-## Star 线图
 
-[![Star History Chart](https://api.star-history.com/svg?repos=2winter-dev/yaoyanpai&type=Date)](https://star-history.com/#2winter-dev/yaoyanpai&Date)
 
 ## 特点 / 功能
 
@@ -126,6 +124,10 @@ yarn preview
 ## 车牌规则参考
 
 - 百度百科（车牌）：<https://baike.baidu.com/item/%E8%BD%A6%E7%89%8C/8347320>
+
+## 为项目点赞
+
+[![Star History Chart](https://api.star-history.com/svg?repos=2winter-dev/yaoyanpai&type=Date)](https://star-history.com/#2winter-dev/yaoyanpai&Date)
 
 ## 许可与使用限制
 
