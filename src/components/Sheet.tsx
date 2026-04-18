@@ -18,7 +18,7 @@ export default function Sheet(props: {
   if (!props.open) return null
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[2000]">
       <button
         aria-label="关闭"
         className="absolute inset-0 bg-black/20"
@@ -28,7 +28,7 @@ export default function Sheet(props: {
         <div className="mx-auto w-full max-w-[420px] px-4 pb-[max(env(safe-area-inset-bottom),12px)]">
           <div className="glass-card overflow-hidden rounded-[28px]">
             <div className="flex items-center justify-between px-5 py-4">
-              <div className="text-[15px] font-semibold tracking-tight">
+              <div className="text-[15px] font-semibold tracking-tight text-[color:var(--app-text)]">
                 {props.title ?? '请选择'}
               </div>
               <button
@@ -46,7 +46,7 @@ export default function Sheet(props: {
                 </svg>
               </button>
             </div>
-            <div className="max-h-[60vh] overflow-auto px-5 pb-5">{props.children}</div>
+            <div className="max-h-[70vh] overflow-auto px-5 pb-8">{props.children}</div>
           </div>
         </div>
       </div>

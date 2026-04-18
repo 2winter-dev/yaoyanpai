@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PlatePreview from '../components/PlatePreview'
-import { displayText, kindLabel } from '../lib/plate'
+import { kindLabel } from '../lib/plate'
 import { clearHistory, loadHistory, removeHistory, type HistoryItem } from '../lib/storage'
 
 function formatTime(ts: number) {
@@ -16,6 +16,7 @@ export default function HistoryPage() {
 
   const empty = useMemo(() => items.length === 0, [items])
   const [expanded, setExpanded] = useState(false)
+  const [mode, setMode] = useState<'stack' | 'list'>('stack')
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setExpanded(true))
@@ -24,8 +25,8 @@ export default function HistoryPage() {
 
   const deckHeight = useMemo(() => {
     // 让牌堆展开更明显：每张露出下方约 10%-20%
-    const base = 320
-    const step = 42
+    const base = 360
+    const step = 46
     const h = base + Math.max(0, items.length - 1) * step
     return Math.min(920, h)
   }, [items.length])
@@ -49,6 +50,13 @@ export default function HistoryPage() {
             <div className="flex items-center justify-between px-5 py-4">
               <div className="text-[15px] font-semibold tracking-tight">查看历史</div>
               <div className="flex items-center gap-2">
+                <button
+                  className="rounded-full bg-black/5 px-3 py-2 text-[12px] font-semibold text-[color:var(--app-text)]"
+                  onClick={() => setMode((m) => (m === 'stack' ? 'list' : 'stack'))}
+                  aria-label="切换展示方式"
+                >
+                  {mode === 'stack' ? '全面展开' : '收起堆叠'}
+                </button>
                 <button
                   className="icon-btn h-9 w-9"
                   onClick={() => {
@@ -83,7 +91,7 @@ export default function HistoryPage() {
             {empty ? (
               <div className="px-6 pb-8 text-center">
                 <div className="text-[16px] font-semibold">还没有历史记录</div>
-                <div className="mt-2 text-[13px] text-black/45">去首页生成一个「牌没有问题！」</div>
+                <div className="mt-2 text-[13px] text-[color:var(--app-subtext)]">去首页生成一个「牌没有问题！」</div>
                 <button
                   className="mt-6 rounded-full bg-black px-5 py-3 text-[13px] font-semibold text-white"
                   onClick={() => nav('/')}
@@ -93,78 +101,110 @@ export default function HistoryPage() {
               </div>
             ) : (
               <div className="px-5 pb-7">
-                <div className="text-[12px] text-black/45">像打牌一样展开，点任意一张回填</div>
+                <div className="text-[12px] text-[color:var(--app-subtext)]">
+                  {mode === 'stack' ? '像打牌一样展开（仅浏览，不回填）' : '列表模式（仅浏览，不回填）'}
+                </div>
 
-                <div className="mt-4 overflow-auto pr-1" style={{ height: deckHeight }}>
-                  <div className="relative mx-auto w-full" style={{ height: deckHeight }}>
-                    {items.map((it, idx) => {
-                      const n = items.length
-                      const center = (n - 1) / 2
-                      const rot = (idx - center) * 2.6
-                      const y = expanded ? idx * 42 : idx * 10
-                      const x = expanded ? (idx - center) * 6 : 0
-                      const scale = expanded ? 1 : 0.985
-                      const z = n - idx
+                {mode === 'list' ? (
+                  <div className="mt-4 space-y-3 overflow-auto pr-1" style={{ maxHeight: deckHeight }}>
+                    {items.map((it) => (
+                      <div key={it.id} className="solid-card px-4 py-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-[13px] font-semibold tracking-tight">{kindLabel(it.kind)}</div>
+                            <div className="mt-1 text-[12px] text-[color:var(--app-subtext)]">{formatTime(it.createdAt)}</div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              className="text-[12px] font-semibold text-[color:var(--app-subtext)] disabled:opacity-40"
+                              disabled={!it.sealed}
+                              onClick={() => nav(`/share/${it.id}`)}
+                            >
+                              分享
+                            </button>
+                            <button
+                              className="text-[12px] font-semibold text-[color:var(--app-subtext)]"
+                              onClick={() => {
+                                removeHistory(it.id)
+                                setItems(loadHistory())
+                              }}
+                            >
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <PlatePreview kind={it.kind} chars={it.chars} sealed={it.sealed ?? true} className="w-full" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4 overflow-auto pr-1" style={{ height: deckHeight }}>
+                    <div className="relative mx-auto w-full" style={{ height: deckHeight }}>
+                      {items.map((it, idx) => {
+                        // 堆叠：同方向倾斜（更干净），避免“乱七八糟多层”
+                        const rot = expanded ? idx * 2.4 : idx * 0.8
+                        const y = expanded ? idx * 46 : idx * 10
+                        const x = expanded ? idx * 2 : 0
+                        const scale = expanded ? 1 : 0.99
+                        const z = items.length - idx
 
-                      return (
-                        <div
-                          key={it.id}
-                          role="button"
-                          tabIndex={0}
-                          className="absolute left-0 right-0 mx-auto w-full cursor-pointer select-none text-left"
-                          style={{
-                            zIndex: z,
-                            transform: `translate3d(${x}px, ${y}px, 0) rotate(${rot}deg) scale(${scale})`,
-                            transition:
-                              'transform 520ms cubic-bezier(0.2, 0.9, 0.2, 1), filter 520ms cubic-bezier(0.2, 0.9, 0.2, 1)',
-                            filter: expanded ? 'drop-shadow(0 22px 28px rgba(0,0,0,0.12))' : 'none',
-                          }}
-                          onClick={() => nav('/', { state: { kind: it.kind, chars: it.chars, fromHistory: true } })}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') nav('/', { state: { kind: it.kind, chars: it.chars, fromHistory: true } })
-                          }}
-                        >
-                          {/* 模板堆叠效果 */}
-                          <div className="relative">
-                            <div className="absolute -left-2 top-3 h-[150px] w-[92%] rotate-[-8deg] rounded-[26px] bg-white/40 shadow-[0_26px_60px_-44px_rgba(0,0,0,0.55)] backdrop-blur-xl" />
-                            <div className="absolute -right-3 top-2 h-[150px] w-[90%] rotate-[7deg] rounded-[26px] bg-white/45 shadow-[0_26px_60px_-44px_rgba(0,0,0,0.55)] backdrop-blur-xl" />
-                            <div className="glass-card relative px-4 py-4">
+                        return (
+                          <div
+                            key={it.id}
+                            className="absolute left-0 right-0 mx-auto w-full select-none text-left"
+                            style={{
+                              zIndex: z,
+                              transform: `translate3d(${x}px, ${y}px, 0) rotate(${rot}deg) scale(${scale})`,
+                              transition:
+                                'transform 520ms cubic-bezier(0.2, 0.9, 0.2, 1), filter 520ms cubic-bezier(0.2, 0.9, 0.2, 1)',
+                              filter: expanded ? 'drop-shadow(0 22px 28px rgba(0,0,0,0.12))' : 'none',
+                            }}
+                            onClick={() => setMode('list')}
+                          >
+                            <div className="solid-card relative px-4 py-4">
                               <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <div className="text-[14px] font-semibold tracking-tight">
-                                    {displayText(it.kind, it.chars)}
-                                  </div>
-                                  <div className="mt-1 text-[12px] text-black/45">
-                                    {kindLabel(it.kind)} · {formatTime(it.createdAt)}
-                                  </div>
+                                  <div className="text-[13px] font-semibold tracking-tight">{kindLabel(it.kind)}</div>
+                                  <div className="mt-1 text-[12px] text-[color:var(--app-subtext)]">{formatTime(it.createdAt)}</div>
                                 </div>
-                                <button
-                                  className="text-[12px] font-semibold text-black/40"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    removeHistory(it.id)
-                                    setItems(loadHistory())
-                                  }}
-                                >
-                                  删除
-                                </button>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    className="text-[12px] font-semibold text-[color:var(--app-subtext)] disabled:opacity-40"
+                                    disabled={!it.sealed}
+                                    onClick={(e) => {
+                                      // 避免触发“展开全部”
+                                      e.stopPropagation()
+                                      nav(`/share/${it.id}`)
+                                    }}
+                                  >
+                                    分享
+                                  </button>
+                                  <button
+                                    className="text-[12px] font-semibold text-[color:var(--app-subtext)]"
+                                    onClick={(e) => {
+                                      // 避免触发“展开全部”
+                                      e.stopPropagation()
+                                      removeHistory(it.id)
+                                      setItems(loadHistory())
+                                    }}
+                                  >
+                                    删除
+                                  </button>
+                                </div>
                               </div>
 
                               <div className="mt-3">
-                                <PlatePreview
-                                  kind={it.kind}
-                                  chars={it.chars}
-                                  sealed={it.sealed ?? true}
-                                  className="w-full"
-                                />
+                                <PlatePreview kind={it.kind} chars={it.chars} sealed={it.sealed ?? true} className="w-full" />
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>

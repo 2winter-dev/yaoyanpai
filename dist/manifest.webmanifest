@@ -1,0 +1,1 @@
+{"name":"我要验牌","short_name":"我要验牌","description":"车牌模拟器（PWA）：支持蓝牌/绿牌/港澳台/两地牌规则，离线可用，夜间模式，牌没有问题！","start_url":"./","display":"standalone","background_color":"#ffffff","theme_color":"#ffffff","lang":"en","scope":"./","icons":[{"src":"pwa-192.png","sizes":"192x192","type":"image/png"},{"src":"pwa-512.png","sizes":"512x512","type":"image/png"}]}

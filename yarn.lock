@@ -1033,6 +1033,11 @@
   resolved "https://registry.yarnpkg.com/@rolldown/binding-linux-arm64-gnu/-/binding-linux-arm64-gnu-1.0.0-rc.15.tgz#12b96e7e7821a9dc2cd5c670ad56882987ed5c62"
   integrity sha512-eBZ/u8iAK9SoHGanqe/jrPnY0JvBN6iXbVOsbO38mbz+ZJsaobExAm1Iu+rxa4S1l2FjG0qEZn4Rc6X8n+9M+w==
 
+"@rolldown/binding-linux-arm64-gnu@^1.0.0-rc.16":
+  version "1.0.0-rc.16"
+  resolved "https://registry.yarnpkg.com/@rolldown/binding-linux-arm64-gnu/-/binding-linux-arm64-gnu-1.0.0-rc.16.tgz#3ec9b2dce7b5c29d37272fa3a1aee6159badfb76"
+  integrity sha512-+tHktCHWV8BDQSjemUqm/Jl/TPk3QObCTIjmdDy/nlupcujZghmKK2962LYrqFpWu+ai01AN/REOH3NEpqvYQg==
+
 "@rolldown/binding-linux-arm64-musl@1.0.0-rc.15":
   version "1.0.0-rc.15"
   resolved "https://registry.yarnpkg.com/@rolldown/binding-linux-arm64-musl/-/binding-linux-arm64-musl-1.0.0-rc.15.tgz#738b0f62f0b65bf676dfe48595017f1883859d1f"

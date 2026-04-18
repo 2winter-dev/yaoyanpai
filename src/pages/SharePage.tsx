@@ -12,15 +12,18 @@ export default function SharePage() {
   const { id } = useParams()
   const cardRef = useRef<HTMLDivElement | null>(null)
   const [busy, setBusy] = useState(false)
+  const [onlyPlate, setOnlyPlate] = useState(false)
 
   const item = useMemo(() => loadHistory().find((x) => x.id === id), [id])
 
   async function makePng() {
     if (!cardRef.current) throw new Error('卡片未就绪')
-    // 背景会被透明导出，这里用白底
+    // 背景会被透明导出，这里用当前主题的纯色底
+    const theme = document.documentElement.dataset.theme
+    const bg = theme === 'dark' ? '#0b0b10' : '#ffffff'
     return await toPng(cardRef.current, {
       cacheBust: true,
-      backgroundColor: '#ffffff',
+      backgroundColor: bg,
       pixelRatio: 2,
     })
   }
@@ -83,7 +86,7 @@ export default function SharePage() {
         <div className="mx-auto w-full max-w-[420px] px-4 pt-10">
           <div className="glass-card px-6 py-10 text-center">
             <div className="text-[16px] font-semibold">找不到这条历史记录</div>
-            <div className="mt-2 text-[13px] text-black/45">可能已被清空或删除</div>
+            <div className="mt-2 text-[13px] text-[color:var(--app-subtext)]">可能已被清空或删除</div>
             <button
               className="mt-6 rounded-full bg-black px-5 py-3 text-[13px] font-semibold text-white"
               onClick={() => nav('/history')}
@@ -117,56 +120,97 @@ export default function SharePage() {
 
       <div className="mx-auto w-full max-w-[420px] px-4 pt-6">
         {/* 分享卡片（可导出） */}
-        <div
-          ref={cardRef}
-          className="rounded-[28px] border border-black/5 bg-white p-6 shadow-[0_30px_60px_-45px_rgba(0,0,0,0.55)]"
-        >
-          <img
-            src={shareBanner}
-            alt=""
-            className="mb-5 h-[90px] w-full rounded-[20px] object-contain"
-          />
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[14px] font-semibold">我要验牌</div>
-              <div className="mt-1 text-[12px] text-black/45">{kindLabel(item.kind)}</div>
-            </div>
-            <div className="rounded-full bg-black px-3 py-2 text-[12px] font-semibold text-white">
-              牌没有问题！
-            </div>
+        <div className="relative">
+          <div
+            ref={cardRef}
+            className={onlyPlate ? 'mx-auto w-fit' : 'share-card'}
+          >
+            {onlyPlate ? (
+              <PlatePreview
+                kind={item.kind}
+                chars={item.chars}
+                sealed={item.sealed ?? true}
+                className="w-full"
+              />
+            ) : (
+              <>
+                <img
+                  src={shareBanner}
+                  alt=""
+                  className="-mx-3 mb-5 h-[110px] w-[calc(100%+24px)] rounded-[22px] object-contain"
+                />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[14px] font-semibold">我要验牌</div>
+                    <div className="mt-1 text-[12px] text-black/45">{kindLabel(item.kind)}</div>
+                  </div>
+                  <div className="rounded-full bg-black px-3 py-2 text-[12px] font-semibold text-white">
+                    牌没有问题！
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <PlatePreview kind={item.kind} chars={item.chars} sealed={item.sealed ?? true} />
+                </div>
+
+                <div className="mt-5 text-center">
+                  <div className="text-[18px] font-semibold tracking-tight">{displayText(item.kind, item.chars)}</div>
+                  <div className="mt-1 text-[13px] text-black/45">牌没有问题！</div>
+                </div>
+
+                <div className="mt-6 text-center text-[11px] text-black/35">© 我要验牌 · 离线也能用</div>
+              </>
+            )}
           </div>
 
-          <div className="mt-5">
-            <PlatePreview kind={item.kind} chars={item.chars} sealed={item.sealed ?? true} />
-          </div>
-
-          <div className="mt-5 text-center">
-            <div className="text-[18px] font-semibold tracking-tight">
-              {displayText(item.kind, item.chars)}
+          {busy ? (
+            <div className="share-loading-mask">
+              <div className="flex items-center gap-3 rounded-full bg-black/85 px-4 py-2 text-[12px] font-semibold text-white">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                正在生成分享图片…
+              </div>
             </div>
-            <div className="mt-1 text-[13px] text-black/45">牌没有问题！</div>
-          </div>
+          ) : null}
+        </div>
 
-          <div className="mt-6 text-center text-[11px] text-black/35">
-            © 我要验牌 · 离线也能用
-          </div>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="text-[12px] text-[color:var(--app-subtext)]">导出内容</div>
+          <button
+            className="rounded-full bg-black/10 px-4 py-2 text-[12px] font-semibold text-[color:var(--app-text)]"
+            onClick={() => setOnlyPlate((v) => !v)}
+          >
+            {onlyPlate ? '仅车牌：开' : '仅车牌：关'}
+          </button>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
           <button
-            className="rounded-full bg-white/80 px-5 py-3 text-[13px] font-semibold shadow-[0_18px_30px_-22px_rgba(0,0,0,0.4)] disabled:opacity-40"
+            className="btn-secondary disabled:opacity-40"
             disabled={busy}
             onClick={download}
           >
-            保存图片
+            {busy ? '处理中…' : '保存图片'}
           </button>
           <button
-            className="rounded-full bg-black px-5 py-3 text-[13px] font-semibold text-white shadow-[0_18px_30px_-18px_rgba(0,0,0,0.75)] disabled:opacity-40"
+            className="btn-primary disabled:opacity-40"
             disabled={busy}
             onClick={systemShare}
           >
-            系统分享
+            {busy ? '处理中…' : '系统分享'}
           </button>
+        </div>
+
+        {/* 开源地址（不参与导出图片：不在 cardRef 内） */}
+        <div className="mt-4 text-center text-[11px] text-[color:var(--app-subtext)]">
+          开放源代码：
+          <a
+            href="https://github.com/2winter-dev/yaoyanpai"
+            target="_blank"
+            rel="noreferrer"
+            className="ml-1 font-semibold text-[color:var(--app-text)] underline decoration-black/20 underline-offset-2"
+          >
+            https://github.com/2winter-dev/yaoyanpai
+          </a>
         </div>
 
         <div className="mt-4 text-center text-[12px] text-black/45">

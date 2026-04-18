@@ -10,13 +10,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['apple-touch-icon.png'],
+      includeAssets: ['apple-touch-icon.png', 'favicon-16.png', 'favicon-32.png'],
       manifest: {
         name: '我要验牌',
         short_name: '我要验牌',
-        description: 'DIY 车牌 · 离线可用 · 牌没有问题！',
-        theme_color: '#f6f7fb',
-        background_color: '#f6f7fb',
+        description: '车牌模拟器（PWA）：支持蓝牌/绿牌/港澳台/两地牌规则，离线可用，夜间模式，牌没有问题！',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         display: 'standalone',
         start_url: './',
         scope: './',

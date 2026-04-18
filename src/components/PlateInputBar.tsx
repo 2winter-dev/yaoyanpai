@@ -2,11 +2,14 @@ import { clsx } from 'clsx'
 import { useMemo, useRef, useState } from 'react'
 import type { PlateChars, PlateKind } from '../lib/plate'
 import {
+  HK_LETTERS,
   LETTERS,
   PROVINCES,
   defaultChars,
   isValidChar,
+  kindLabel,
   lengthOf,
+  lockedChar,
   normalizeChars,
   tryInferGreenKind,
 } from '../lib/plate'
@@ -19,16 +22,51 @@ function cleanText(raw: string) {
 
 function typeBtnClass(kind: PlateKind) {
   if (kind === 'blue') return 'bg-gradient-to-b from-[#2b6cff] to-[#1f50d8] text-white'
-  return 'bg-gradient-to-b from-[#20d66f] to-[#0fae55] text-white'
+  if (kind === 'green_small' || kind === 'green_large') return 'bg-gradient-to-b from-[#20d66f] to-[#0fae55] text-white'
+  if (kind === 'moto') return 'bg-[#f5c233] text-[#0b0b10]'
+  // FV/FU/FT：后牌黄底（纯色），与模拟器一致
+  if (kind === 'fv' || kind === 'fu' || kind === 'ft') return 'bg-[#f5c233] text-black'
+  // 避免夜间模式下 text-black 被全局兜底规则改色
+  if (kind === 'tw') return 'bg-white text-[#0b0b10] border border-black/20'
+  if (kind === 'hk') return 'bg-black text-white'
+  if (kind === 'mo') return 'bg-black text-white'
+  return 'bg-black text-white'
 }
 
 function typeBtnText(kind: PlateKind) {
-  return kind === 'blue' ? '蓝' : '绿'
+  if (kind === 'blue') return '蓝'
+  if (kind === 'green_small' || kind === 'green_large') return '绿'
+  if (kind === 'moto') return '摩'
+  if (kind === 'hk') return '港'
+  if (kind === 'mo') return '澳'
+  if (kind === 'tw') return '台'
+  if (kind === 'yuez_hk' || kind === 'yuez_mo') return '粤Z'
+  if (kind === 'fv') return 'FV'
+  if (kind === 'fu') return 'FU'
+  return 'FT'
 }
 
 function placeholder(kind: PlateKind, i: number) {
-  if (i === 0) return '省'
-  if (i === 1) return 'A'
+  const locked = lockedChar(kind, i)
+  if (locked) return locked
+
+  if (kind === 'blue' || kind === 'green_small' || kind === 'green_large') {
+    if (i === 0) return '省'
+    if (i === 1) return 'A'
+  }
+  if (kind === 'moto') {
+    if (i === 0) return '省'
+    if (i === 1) return 'A'
+  }
+  if (kind === 'hk') {
+    if (i === 0 || i === 1) return 'A'
+  }
+  if (kind === 'mo') {
+    if (i === 1) return 'A'
+  }
+  if (kind === 'tw') {
+    if (i >= 0 && i <= 2) return 'A'
+  }
   if (kind === 'blue') return '·'
   if (kind === 'green_small') {
     if (i === 2) return 'D'
@@ -36,6 +74,9 @@ function placeholder(kind: PlateKind, i: number) {
   }
   if (kind === 'green_large') {
     if (i === 7) return 'D'
+    return '·'
+  }
+  if (kind === 'hk' || kind === 'mo' || kind === 'fv' || kind === 'fu' || kind === 'ft' || kind === 'yuez_hk' || kind === 'yuez_mo') {
     return '·'
   }
   return '·'
@@ -55,6 +96,7 @@ export default function PlateInputBar(props: {
   const [openKind, setOpenKind] = useState(false)
   const [openProvince, setOpenProvince] = useState(false)
   const [openLetter, setOpenLetter] = useState(false)
+  const [letterTargetIndex, setLetterTargetIndex] = useState<number>(1)
 
   const len = lengthOf(props.kind)
   const cells = useMemo(() => {
@@ -63,9 +105,9 @@ export default function PlateInputBar(props: {
   }, [props.chars, len])
 
   function focusTyping(index = activeIndex) {
-    const safeIndex = Math.max(2, Math.min(index, len - 1))
+    const safeIndex = Math.max(0, Math.min(index, len - 1))
     setActiveIndex(safeIndex)
-    inputRef.current?.focus()
+    // 不主动触发系统软键盘：输入只通过我们自己的面板(Keypad)
   }
 
   function patchAt(index: number, ch: string) {
@@ -162,13 +204,13 @@ export default function PlateInputBar(props: {
     setOpenKind(false)
     setKeypadOpen(false)
     if (nextKind === props.kind) return
-    // 尽量保留前两位（省/字母），其余清空
     const next = defaultChars(nextKind)
-    next[0] = props.chars[0] || ''
-    next[1] = props.chars[1] || ''
-    // 绿牌必有车型字母位：默认 D（纯电）
-    if (nextKind === 'green_small') next[2] = 'D'
-    if (nextKind === 'green_large') next[7] = 'D'
+    // 仅在普通内地牌之间切换时保留“省/字母”
+    const isCn = (k: PlateKind) => k === 'blue' || k === 'green_small' || k === 'green_large'
+    if (isCn(props.kind) && isCn(nextKind)) {
+      next[0] = props.chars[0] || next[0]
+      next[1] = props.chars[1] || next[1]
+    }
     props.onKindChange(nextKind)
     props.onCharsChange(normalizeChars(nextKind, next))
     focusTyping(2)
@@ -189,7 +231,7 @@ export default function PlateInputBar(props: {
         ) : null}
 
         <div className="mx-auto w-full max-w-[420px] px-4">
-          <div className="glass-card flex items-center gap-3 rounded-full px-3 py-2">
+          <div className="toolbar-card flex items-center gap-3 px-3 py-2">
             <button
               className={clsx(
                 'rounded-full px-3 py-2 text-[12px] font-semibold shadow-[0_10px_20px_-15px_rgba(0,0,0,0.35)] whitespace-nowrap',
@@ -209,7 +251,38 @@ export default function PlateInputBar(props: {
                 const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
                 const btn = el?.closest?.('[data-plate-index]') as HTMLElement | null
                 const idx = btn ? Number(btn.dataset.plateIndex) : NaN
-                if (!Number.isFinite(idx) || idx < 2) return
+                if (!Number.isFinite(idx)) return
+                if (lockedChar(props.kind, idx)) return
+
+                // 省份/字母位：只弹出选择面板，不打开数字键盘
+                if (
+                  props.kind === 'blue' ||
+                  props.kind === 'green_small' ||
+                  props.kind === 'green_large' ||
+                  props.kind === 'moto'
+                ) {
+                  if (idx === 0) return setOpenProvince(true)
+                  if (idx === 1) {
+                    setLetterTargetIndex(1)
+                    return setOpenLetter(true)
+                  }
+                }
+                if (props.kind === 'hk') {
+                  // 港牌允许纯数字，不强制弹字母面板：直接打开自定义键盘
+                }
+                if (props.kind === 'mo') {
+                  if (idx === 1) {
+                    setLetterTargetIndex(1)
+                    return setOpenLetter(true)
+                  }
+                }
+                if (props.kind === 'tw') {
+                  if (idx >= 0 && idx <= 2) {
+                    setLetterTargetIndex(idx)
+                    return setOpenLetter(true)
+                  }
+                }
+
                 setDragging(true)
                 focusTyping(idx)
                 setKeypadOpen(true)
@@ -221,6 +294,7 @@ export default function PlateInputBar(props: {
                 const btn = el?.closest?.('[data-plate-index]') as HTMLElement | null
                 const idx = btn ? Number(btn.dataset.plateIndex) : NaN
                 if (!Number.isFinite(idx) || idx < 2) return
+                if (lockedChar(props.kind, idx)) return
                 if (idx !== activeIndex) focusTyping(idx)
               }}
               onPointerUp={() => setDragging(false)}
@@ -237,13 +311,41 @@ export default function PlateInputBar(props: {
                     key={i}
                     data-plate-index={i}
                     className={clsx(
-                      'grid h-9 w-7 place-items-center rounded-[10px] text-[13px] font-semibold',
+                      // 保持圆形，避免绿牌/多模板时形状被挤变形
+                      'grid h-9 w-9 place-items-center rounded-full text-[13px] font-semibold',
                       'bg-white/50 shadow-[0_8px_16px_-14px_rgba(0,0,0,0.45)] transition-all duration-150',
                       isActive && 'ring-2 ring-black/20 scale-[1.08] bg-white/70',
+                      lockedChar(props.kind, i) && 'bg-black/10 text-black/60 ring-0 scale-100',
                     )}
                     onClick={() => {
-                      if (i === 0) return setOpenProvince(true)
-                      if (i === 1) return setOpenLetter(true)
+                      if (lockedChar(props.kind, i)) return
+                      if (
+                        props.kind === 'blue' ||
+                        props.kind === 'green_small' ||
+                        props.kind === 'green_large' ||
+                        props.kind === 'moto'
+                      ) {
+                        if (i === 0) return setOpenProvince(true)
+                        if (i === 1) {
+                          setLetterTargetIndex(1)
+                          return setOpenLetter(true)
+                        }
+                      }
+                      if (props.kind === 'hk') {
+                        // 港牌允许纯数字，不强制弹字母面板：直接打开自定义键盘
+                      }
+                      if (props.kind === 'mo') {
+                        if (i === 1) {
+                          setLetterTargetIndex(1)
+                          return setOpenLetter(true)
+                        }
+                      }
+                      if (props.kind === 'tw') {
+                        if (i >= 0 && i <= 2) {
+                          setLetterTargetIndex(i)
+                          return setOpenLetter(true)
+                        }
+                      }
                       focusTyping(i)
                       setKeypadOpen(true)
                     }}
@@ -253,6 +355,27 @@ export default function PlateInputBar(props: {
                 )
               })}
             </div>
+          </div>
+
+          <div className="mt-2 px-2 text-center text-[11px] text-[color:var(--app-subtext)]">
+            开放源代码：
+            <a
+              href="https://github.com/2winter-dev/yaoyanpai"
+              target="_blank"
+              rel="noreferrer"
+              className="ml-1 font-semibold text-[color:var(--app-text)] underline decoration-black/20 underline-offset-2"
+            >
+              https://github.com/2winter-dev/yaoyanpai
+            </a>
+            <span className="mx-2 opacity-40">·</span>
+            <a
+              href="https://baike.baidu.com/item/%E8%BD%A6%E7%89%8C/8347320"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-[color:var(--app-text)] underline decoration-black/20 underline-offset-2"
+            >
+              车牌规则
+            </a>
           </div>
 
           {/* 隐藏输入：用于键盘录入与粘贴 */}
@@ -273,9 +396,18 @@ export default function PlateInputBar(props: {
         <div className="grid gap-2">
           {(
             [
-              { k: 'blue', t: '蓝牌（普通）' },
-              { k: 'green_small', t: '绿牌（小型新能源）' },
-              { k: 'green_large', t: '绿牌（大型新能源）' },
+              { k: 'blue', t: kindLabel('blue') },
+              { k: 'green_small', t: kindLabel('green_small') },
+              { k: 'green_large', t: kindLabel('green_large') },
+              { k: 'moto', t: kindLabel('moto') },
+              { k: 'yuez_hk', t: kindLabel('yuez_hk') },
+              { k: 'yuez_mo', t: kindLabel('yuez_mo') },
+              { k: 'fv', t: kindLabel('fv') },
+              { k: 'fu', t: kindLabel('fu') },
+              { k: 'ft', t: kindLabel('ft') },
+              { k: 'hk', t: kindLabel('hk') },
+              { k: 'mo', t: kindLabel('mo') },
+              { k: 'tw', t: kindLabel('tw') },
             ] as const
           ).map((x) => (
             <button
@@ -287,7 +419,7 @@ export default function PlateInputBar(props: {
               onClick={() => setKind(x.k)}
             >
               <div className="text-[14px] font-semibold">{x.t}</div>
-              <div className="text-[12px] text-black/45">点击切换</div>
+              <div className="text-[12px] text-black/45">切换</div>
             </button>
           ))}
         </div>
@@ -299,7 +431,7 @@ export default function PlateInputBar(props: {
             <button
               key={p}
               className={clsx(
-                'grid h-11 place-items-center rounded-[16px] bg-white/70 font-semibold',
+                'kbd-option grid h-11 place-items-center rounded-[16px] font-semibold',
                 'shadow-[0_12px_26px_-20px_rgba(0,0,0,0.45)]',
               )}
               onClick={() => {
@@ -321,15 +453,15 @@ export default function PlateInputBar(props: {
 
       <Sheet open={openLetter} title="选择发牌字母" onClose={() => setOpenLetter(false)}>
         <div className="grid grid-cols-7 gap-2">
-          {LETTERS.map((p) => (
+          {(props.kind === 'hk' || props.kind === 'mo' ? HK_LETTERS : LETTERS).map((p) => (
             <button
               key={p}
               className={clsx(
-                'grid h-11 place-items-center rounded-[16px] bg-white/70 font-semibold',
+                'kbd-option grid h-11 place-items-center rounded-[16px] font-semibold',
                 'shadow-[0_12px_26px_-20px_rgba(0,0,0,0.45)]',
               )}
               onClick={() => {
-                patchAt(1, p)
+                patchAt(letterTargetIndex, p)
                 setOpenLetter(false)
                 requestAnimationFrame(() => focusTyping(2))
               }}
