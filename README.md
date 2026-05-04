@@ -4,6 +4,11 @@
   <a href="https://github.com/2winter-dev/yaoyanpai">开源地址：github.com/2winter-dev/yaoyanpai</a>
 </p>
 
+鸿蒙原生6.1已上线<a href="https://appgallery.huawei.com/app/detail?id=com.lelepig.carmodel&channelId=SHARE&source=appshare">车牌DIY模拟器</a>
+
+
+
+
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-PWA%20%7C%20Web-111111" />
   <img src="https://img.shields.io/badge/Type-Plate%20Simulator-111111" />
